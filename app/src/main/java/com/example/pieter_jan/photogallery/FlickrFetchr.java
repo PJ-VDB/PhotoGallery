@@ -3,6 +3,9 @@ package com.example.pieter_jan.photogallery;
 import android.net.Uri;
 import android.util.Log;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -77,11 +80,14 @@ public class FlickrFetchr {
                     .appendQueryParameter("extras", "url_s") // tell Flickr to include the URL for the small version of the picture if it is available
                     .build().toString();
             String jsonString = getUrlString(url); // connect to this url
-            JSONObject jsonBody = new JSONObject(jsonString); // parse the json string into an object hierarchy that maps tho the original JSON text
-            parseItems(items, jsonBody);
+//            JSONObject jsonBody = new JSONObject(jsonString); // parse the json string into an object hierarchy that maps tho the original JSON text
+//            parseItems(items, jsonBody);
+
+            parseItemGSON(items, jsonString); //GSON challenge
+
             Log.i(TAG, "Received JSON: " + jsonString);
-        } catch (JSONException je){
-            Log.e(TAG, "Failed to parse JSON", je);
+//        } catch (JSONException je){
+//            Log.e(TAG, "Failed to parse JSON", je);
         } catch (IOException ioe){
             Log.e(TAG, "Failed to fetch items", ioe);
         }
@@ -113,6 +119,28 @@ public class FlickrFetchr {
             }
 
             item.setUrl(photoJsonObject.getString("url_s"));
+            items.add(item);
+        }
+
+    }
+
+    /*
+    GSON challenge
+     */
+    private void parseItemGSON(List<GalleryItem> items, String jsonString){
+        Gson gson = new GsonBuilder().create();
+        Flickr flickr = gson.fromJson(jsonString, Flickr.class);
+
+        for(Photo p:flickr.photos.photo){
+            GalleryItem item = new GalleryItem();
+            item.setId(p.id);
+            item.setCaption(p.title);
+
+            if (p.url_s==""){ // url for lower size image, not always available
+                continue;
+            }
+
+            item.setUrl(p.url_s);
             items.add(item);
         }
 
