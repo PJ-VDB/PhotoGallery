@@ -61,7 +61,7 @@ public class PhotoGalleryFragment extends Fragment {
                 GridLayoutManager layoutManager = (GridLayoutManager) recyclerView.getLayoutManager();
                 int loadBufferPosition = 1;
                 if(lastPosition >= photoAdapter.getItemCount() - layoutManager.getSpanCount()- loadBufferPosition){
-                    new FetchItemTask().execute(lastPosition + 1);
+                    new FetchItemTask().execute(lastFetchedPage + 1);
                 }
 
             }
