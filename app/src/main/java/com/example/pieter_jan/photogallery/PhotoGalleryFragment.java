@@ -1,5 +1,6 @@
 package com.example.pieter_jan.photogallery;
 
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -8,6 +9,10 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by pieter-jan on 12/6/2016.
@@ -18,6 +23,7 @@ public class PhotoGalleryFragment extends Fragment {
     private static final String TAG = "PhotoGalleryFragment";
 
     private RecyclerView mPhotoRecyclerView;
+    private List<GalleryItem> mItems = new ArrayList<>();
 
 
     public static PhotoGalleryFragment newInstance(){
@@ -28,6 +34,7 @@ public class PhotoGalleryFragment extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setRetainInstance(true);
+        new FetchItemTask().execute();
     }
 
     @Nullable
@@ -39,8 +46,87 @@ public class PhotoGalleryFragment extends Fragment {
         mPhotoRecyclerView = (RecyclerView) view.findViewById(R.id.fragment_photo_gallery_recycler_view);
         mPhotoRecyclerView.setLayoutManager(new GridLayoutManager(getActivity(),3));
 
+        setupAdapter();
+
         return view;
     }
 
+    /*
+    Set up the adapter to the recyclerview
+     */
+    private void setupAdapter(){
+        if(isAdded()){ // confirms that the fragment has been added to an activity
+            mPhotoRecyclerView.setAdapter(new PhotoAdapter(mItems));
+        }
+    }
+
+    /*
+    Class to create a background thread for the network connection, networking is not allowed on the main thread (UI thread).
+     */
+public class FetchItemTask extends AsyncTask<Void, Void, List<GalleryItem>> {
+
+    @Override
+    protected List<GalleryItem> doInBackground(Void... params) {
+        return new FlickrFetchr().fetchItems();
+    }
+
+        /*
+        Update the UI after execution, updating UI is only allowed on UI thread
+         */
+        @Override
+        protected void onPostExecute(List<GalleryItem> items) {
+            mItems = items;
+            setupAdapter();
+        }
+    }
+
+
+    /*
+    ViewHolder class
+     */
+    private class PhotoHolder extends RecyclerView.ViewHolder {
+        private TextView mTitleTextView;
+
+        public PhotoHolder(View itemView) {
+            super(itemView);
+
+            mTitleTextView = (TextView) itemView;
+        }
+
+        // Used to bind the adapter to the viewholder
+        public void bindGalleryItem(GalleryItem item){
+            mTitleTextView.setText(item.toString());
+        }
+
+    }
+
+    /**
+     * Adapter class
+     */
+    private class PhotoAdapter extends RecyclerView.Adapter<PhotoHolder>{
+
+        private List<GalleryItem> mGalleryItems;
+
+        public PhotoAdapter(List<GalleryItem> galleryItems) {
+            mGalleryItems = galleryItems;
+        }
+
+        @Override
+        public PhotoHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            TextView textView = new TextView(getActivity());
+            return new PhotoHolder(textView);
+        }
+
+        @Override
+        public void onBindViewHolder(PhotoHolder holder, int position) {
+            GalleryItem galleryItem = mGalleryItems.get(position);
+            holder.bindGalleryItem(galleryItem);
+        }
+
+        @Override
+        public int getItemCount() {
+            return mGalleryItems.size();
+        }
+    }
 
 }
