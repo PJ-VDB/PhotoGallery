@@ -69,7 +69,7 @@ public class FlickrFetchr {
     }
 
     // Set up the url String to fetch photos from flickr
-    public List<GalleryItem> fetchItems() {
+    public List<GalleryItem> fetchItems(int page) {
         try {
             String url = Uri.parse("https://api.flickr.com/services/rest")
                     .buildUpon()
@@ -78,6 +78,7 @@ public class FlickrFetchr {
                     .appendQueryParameter("format", "json")
                     .appendQueryParameter("nojsoncallback", "1")
                     .appendQueryParameter("extras", "url_s") // tell Flickr to include the URL for the small version of the picture if it is available
+                    .appendQueryParameter("page",Integer.toString(page)) // Challenge multiple pages
                     .build().toString();
             String jsonString = getUrlString(url); // connect to this url
 //            JSONObject jsonBody = new JSONObject(jsonString); // parse the json string into an object hierarchy that maps tho the original JSON text

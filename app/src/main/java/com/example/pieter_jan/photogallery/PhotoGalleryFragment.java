@@ -6,6 +6,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,6 +25,9 @@ public class PhotoGalleryFragment extends Fragment {
 
     private RecyclerView mPhotoRecyclerView;
     private List<GalleryItem> mItems = new ArrayList<>();
+
+    // Challenge multiple pages
+    private int lastFetchedPage = 1;
 
 
     public static PhotoGalleryFragment newInstance(){
@@ -46,6 +50,29 @@ public class PhotoGalleryFragment extends Fragment {
         mPhotoRecyclerView = (RecyclerView) view.findViewById(R.id.fragment_photo_gallery_recycler_view);
         mPhotoRecyclerView.setLayoutManager(new GridLayoutManager(getActivity(),3));
 
+
+        //Challenge multiple pages
+        mPhotoRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
+                PhotoAdapter photoAdapter = (PhotoAdapter) recyclerView.getAdapter();
+                int lastPosition = photoAdapter.getLastBoundPosition();
+
+                GridLayoutManager layoutManager = (GridLayoutManager) recyclerView.getLayoutManager();
+                int loadBufferPosition = 1;
+                if(lastPosition >= photoAdapter.getItemCount() - layoutManager.getSpanCount()- loadBufferPosition){
+                    new FetchItemTask().execute(lastPosition + 1);
+                }
+
+            }
+
+            @Override
+            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+            }
+        });
+
+
         setupAdapter();
 
         return view;
@@ -63,11 +90,11 @@ public class PhotoGalleryFragment extends Fragment {
     /*
     Class to create a background thread for the network connection, networking is not allowed on the main thread (UI thread).
      */
-public class FetchItemTask extends AsyncTask<Void, Void, List<GalleryItem>> {
+public class FetchItemTask extends AsyncTask<Integer, Void, List<GalleryItem>> {
 
     @Override
-    protected List<GalleryItem> doInBackground(Void... params) {
-        return new FlickrFetchr().fetchItems();
+    protected List<GalleryItem> doInBackground(Integer... params) {
+        return new FlickrFetchr().fetchItems(lastFetchedPage);
     }
 
         /*
@@ -75,10 +102,22 @@ public class FetchItemTask extends AsyncTask<Void, Void, List<GalleryItem>> {
          */
         @Override
         protected void onPostExecute(List<GalleryItem> items) {
-            mItems = items;
-            setupAdapter();
+//            mItems = items;
+//            setupAdapter();
+
+            // Multiple pages challenge
+            if(lastFetchedPage >1){
+                mItems.addAll(items);
+                mPhotoRecyclerView.getAdapter().notifyDataSetChanged();
+            }
+            else{
+                mItems = items;
+                setupAdapter();
+            }
+            lastFetchedPage++;
         }
-    }
+
+        }
 
 
     /*
@@ -106,6 +145,7 @@ public class FetchItemTask extends AsyncTask<Void, Void, List<GalleryItem>> {
     private class PhotoAdapter extends RecyclerView.Adapter<PhotoHolder>{
 
         private List<GalleryItem> mGalleryItems;
+        private int lastBoundPosition;
 
         public PhotoAdapter(List<GalleryItem> galleryItems) {
             mGalleryItems = galleryItems;
@@ -121,12 +161,21 @@ public class FetchItemTask extends AsyncTask<Void, Void, List<GalleryItem>> {
         public void onBindViewHolder(PhotoHolder holder, int position) {
             GalleryItem galleryItem = mGalleryItems.get(position);
             holder.bindGalleryItem(galleryItem);
+
+            lastBoundPosition = position;
+            Log.i(TAG,"Last bound position is " + Integer.toString(lastBoundPosition)); // Check what the last position is in the recyclerview
         }
 
         @Override
         public int getItemCount() {
             return mGalleryItems.size();
         }
+
+        // Challenge mutliple pages
+        public int getLastBoundPosition() {
+            return lastBoundPosition;
+        }
     }
+
 
 }
