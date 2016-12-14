@@ -48,13 +48,13 @@ public class PhotoGalleryFragment extends Fragment {
         Handler responseHandler = new Handler();
         mThumbnailDownloader = new ThumbnailDownloader<>(responseHandler);
         mThumbnailDownloader.setThumbnailDownloadListener(
-            new ThumbnailDownloader.ThumbnailDownloadListener<PhotoHolder>(){
-                @Override
-                public void onThumbnailDownloaded(PhotoHolder photoHolder, Bitmap bitmap) {
-                    Drawable drawable = new BitmapDrawable(getResources(), bitmap);
-                    photoHolder.bindDrawable(drawable);
+                new ThumbnailDownloader.ThumbnailDownloadListener<PhotoHolder>(){
+                    @Override
+                    public void onThumbnailDownloaded(PhotoHolder photoHolder, Bitmap bitmap) {
+                        Drawable drawable = new BitmapDrawable(getResources(), bitmap);
+                        photoHolder.bindDrawable(drawable);
+                    }
                 }
-            }
         );
 
         mThumbnailDownloader.start();
@@ -125,34 +125,34 @@ public class PhotoGalleryFragment extends Fragment {
     /*
     Class to create a background thread for the network connection, networking is not allowed on the main thread (UI thread).
      */
-public class FetchItemTask extends AsyncTask<Integer, Void, List<GalleryItem>> {
+    public class FetchItemTask extends AsyncTask<Integer, Void, List<GalleryItem>> {
 
-    @Override
-    protected List<GalleryItem> doInBackground(Integer... params) {
-        return new FlickrFetchr().fetchItems(lastFetchedPage);
-    }
+        @Override
+        protected List<GalleryItem> doInBackground(Integer... params) {
+            return new FlickrFetchr().fetchItems(lastFetchedPage);
+        }
 
         /*
         Update the UI after execution, updating UI is only allowed on UI thread
          */
         @Override
         protected void onPostExecute(List<GalleryItem> items) {
-//            mItems = items;
-//            setupAdapter();
+            mItems = items;
+            setupAdapter();
 
-            // Multiple pages challenge
-            if(lastFetchedPage >1){
-                mItems.addAll(items);
-                mPhotoRecyclerView.getAdapter().notifyDataSetChanged();
-            }
-            else{
-                mItems = items;
-                setupAdapter();
-            }
-            lastFetchedPage++;
+//            // Multiple pages challenge
+//            if(lastFetchedPage >1){
+//                mItems.addAll(items);
+//                mPhotoRecyclerView.getAdapter().notifyDataSetChanged();
+//            }
+//            else{
+//                mItems = items;
+//                setupAdapter();
+//            }
+//            lastFetchedPage++;
         }
 
-        }
+    }
 
 
     /*
@@ -202,8 +202,8 @@ public class FetchItemTask extends AsyncTask<Integer, Void, List<GalleryItem>> {
             mThumbnailDownloader.queueThumbnail(holder, galleryItem.getUrl());
 
             // Challenge multiple pages
-            lastBoundPosition = position;
-            Log.i(TAG,"Last bound position is " + Integer.toString(lastBoundPosition)); // Check what the last position is in the recyclerview
+//            lastBoundPosition = position;
+//            Log.i(TAG,"Last bound position is " + Integer.toString(lastBoundPosition)); // Check what the last position is in the recyclerview
         }
 
         @Override

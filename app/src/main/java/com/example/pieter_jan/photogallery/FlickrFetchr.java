@@ -27,8 +27,8 @@ public class FlickrFetchr {
     private static final String TAG = "FlickrFetchr";
 
     private static final String API_KEY = BuildConfig.MY_API_KEY;
+    
 
-//    private static final String API_KEY = "6db62f99ca8fa4ee9db72dcb4bdad2d3" ; // The API key from flickr
     private List<GalleryItem> items = new ArrayList<>();
 
     /**
@@ -78,17 +78,17 @@ public class FlickrFetchr {
                     .appendQueryParameter("format", "json")
                     .appendQueryParameter("nojsoncallback", "1")
                     .appendQueryParameter("extras", "url_s") // tell Flickr to include the URL for the small version of the picture if it is available
-                    .appendQueryParameter("page",Integer.toString(page)) // Challenge multiple pages
+//                    .appendQueryParameter("page",Integer.toString(page)) // Challenge multiple pages
                     .build().toString();
             String jsonString = getUrlString(url); // connect to this url
-//            JSONObject jsonBody = new JSONObject(jsonString); // parse the json string into an object hierarchy that maps tho the original JSON text
-//            parseItems(items, jsonBody);
+            JSONObject jsonBody = new JSONObject(jsonString); // parse the json string into an object hierarchy that maps tho the original JSON text
+            parseItems(items, jsonBody);
 
-            parseItemGSON(items, jsonString); //GSON challenge
+//            parseItemGSON(items, jsonString); //GSON challenge
 
             Log.i(TAG, "Received JSON: " + jsonString);
-//        } catch (JSONException je){
-//            Log.e(TAG, "Failed to parse JSON", je);
+        } catch (JSONException je){
+            Log.e(TAG, "Failed to parse JSON", je);
         } catch (IOException ioe){
             Log.e(TAG, "Failed to fetch items", ioe);
         }
