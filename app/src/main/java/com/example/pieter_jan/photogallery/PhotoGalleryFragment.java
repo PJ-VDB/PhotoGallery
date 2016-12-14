@@ -10,8 +10,12 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SearchView;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -43,7 +47,8 @@ public class PhotoGalleryFragment extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setRetainInstance(true);
-        new FetchItemTask().execute();
+        setHasOptionsMenu(true);
+        updateItems();
 
         Handler responseHandler = new Handler();
         mThumbnailDownloader = new ThumbnailDownloader<>(responseHandler);
@@ -60,6 +65,57 @@ public class PhotoGalleryFragment extends Fragment {
         mThumbnailDownloader.start();
         mThumbnailDownloader.getLooper();
         Log.i(TAG, "Background thread started");
+    }
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        super.onCreateOptionsMenu(menu, inflater);
+        inflater.inflate(R.menu.fragment_photo_gallery, menu);
+
+        MenuItem searchItem = menu.findItem(R.id.menu_item_search);
+        final SearchView searchView = (SearchView) searchItem.getActionView();
+
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                Log.d(TAG, "QueryTextSubmit: " + query);
+                QueryPreferences.setStoredQuery(getActivity(), query);
+                updateItems();
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                Log.d(TAG, "QueryTextChange: " + newText);
+                return false;
+            }
+        });
+
+        // Set the previously entered query in the searchview
+        searchView.setOnSearchClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String query = QueryPreferences.getStoredQuery(getActivity());
+                searchView.setQuery(query, false);
+            }
+        });
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()){
+            case R.id.menu_item_clear:
+                QueryPreferences.setStoredQuery(getActivity(),null);
+                updateItems();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    private void updateItems() {
+        String query = QueryPreferences.getStoredQuery(getActivity());
+        new FetchItemTask(query).execute();
     }
 
     @Override
@@ -80,26 +136,26 @@ public class PhotoGalleryFragment extends Fragment {
         mPhotoRecyclerView.setLayoutManager(new GridLayoutManager(getActivity(),3));
 
 
-        //Challenge multiple pages
-        mPhotoRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
-            @Override
-            public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
-                PhotoAdapter photoAdapter = (PhotoAdapter) recyclerView.getAdapter();
-                int lastPosition = photoAdapter.getLastBoundPosition();
-
-                GridLayoutManager layoutManager = (GridLayoutManager) recyclerView.getLayoutManager();
-                int loadBufferPosition = 1;
-                if(lastPosition >= photoAdapter.getItemCount() - layoutManager.getSpanCount()- loadBufferPosition){
-                    new FetchItemTask().execute(lastFetchedPage + 1);
-                }
-
-            }
-
-            @Override
-            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
-                super.onScrolled(recyclerView, dx, dy);
-            }
-        });
+//        //Challenge multiple pages
+//        mPhotoRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+//            @Override
+//            public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
+//                PhotoAdapter photoAdapter = (PhotoAdapter) recyclerView.getAdapter();
+//                int lastPosition = photoAdapter.getLastBoundPosition();
+//
+//                GridLayoutManager layoutManager = (GridLayoutManager) recyclerView.getLayoutManager();
+//                int loadBufferPosition = 1;
+//                if(lastPosition >= photoAdapter.getItemCount() - layoutManager.getSpanCount()- loadBufferPosition){
+//                    new FetchItemTask().execute(lastFetchedPage + 1);
+//                }
+//
+//            }
+//
+//            @Override
+//            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+//                super.onScrolled(recyclerView, dx, dy);
+//            }
+//        });
 
 
         setupAdapter();
@@ -126,10 +182,20 @@ public class PhotoGalleryFragment extends Fragment {
     Class to create a background thread for the network connection, networking is not allowed on the main thread (UI thread).
      */
     public class FetchItemTask extends AsyncTask<Integer, Void, List<GalleryItem>> {
+        private String mQuery;
+
+        public FetchItemTask(String query){
+            mQuery = query;
+        }
 
         @Override
         protected List<GalleryItem> doInBackground(Integer... params) {
-            return new FlickrFetchr().fetchItems(lastFetchedPage);
+
+            if (mQuery == null) {
+                return new FlickrFetchr().fetchRecentPhotos();
+            } else {
+                return new FlickrFetchr().searchPhotos(mQuery);
+            }
         }
 
         /*
