@@ -1,5 +1,6 @@
 package com.example.pieter_jan.photogallery;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -18,6 +19,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ImageView;
 
 import java.util.ArrayList;
@@ -72,7 +74,7 @@ public class PhotoGalleryFragment extends Fragment {
         super.onCreateOptionsMenu(menu, inflater);
         inflater.inflate(R.menu.fragment_photo_gallery, menu);
 
-        MenuItem searchItem = menu.findItem(R.id.menu_item_search);
+        final MenuItem searchItem = menu.findItem(R.id.menu_item_search);
         final SearchView searchView = (SearchView) searchItem.getActionView();
 
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
@@ -80,6 +82,14 @@ public class PhotoGalleryFragment extends Fragment {
             public boolean onQueryTextSubmit(String query) {
                 Log.d(TAG, "QueryTextSubmit: " + query);
                 QueryPreferences.setStoredQuery(getActivity(), query);
+                
+                collapseSearchView(); //challenge
+
+                // Alternative solution to challenge (many alternative solutions available)
+//                searchView.clearFocus(); // this collapses the keyboard
+//                searchView.setVisibility(View.GONE); // this hides the search button
+
+
                 updateItems();
                 return true;
             }
@@ -88,6 +98,15 @@ public class PhotoGalleryFragment extends Fragment {
             public boolean onQueryTextChange(String newText) {
                 Log.d(TAG, "QueryTextChange: " + newText);
                 return false;
+            }
+
+            private void collapseSearchView() {
+                searchItem.collapseActionView(); // collapse the action view
+                View view = getActivity().getCurrentFocus(); // hide the soft keyboard
+                if (view != null){
+                    InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+                    imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+                }
             }
         });
 
@@ -100,6 +119,7 @@ public class PhotoGalleryFragment extends Fragment {
             }
         });
     }
+
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -115,6 +135,12 @@ public class PhotoGalleryFragment extends Fragment {
 
     private void updateItems() {
         String query = QueryPreferences.getStoredQuery(getActivity());
+
+        if (mPhotoRecyclerView != null){
+            mItems.clear();
+            mPhotoRecyclerView.getAdapter().notifyDataSetChanged();
+        }
+
         new FetchItemTask(query).execute();
     }
 
