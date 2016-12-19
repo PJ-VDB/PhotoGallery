@@ -9,7 +9,7 @@ import android.preference.PreferenceManager;
 
 public class QueryPreferences {
     private static final String PREF_SEARCH_QUERY = "searchQuery"; // the key for the search query
-
+    private static final String PREF_LAST_RESULT_ID  = "lastResultId";
     /*
     Read the query from shared preferences
     (does not have a context of its own, that's why a context needs to be passed in)
@@ -29,5 +29,17 @@ public class QueryPreferences {
                 .apply();
     }
 
+    // Poll Flickr to check the latest id (of the results)
+    public static String getPrefLastResultId(Context context){
+        return PreferenceManager.getDefaultSharedPreferences(context)
+                .getString(PREF_LAST_RESULT_ID, null);
+    }
+
+    public static void setLastResultId(Context context, String lastResultId){
+        PreferenceManager.getDefaultSharedPreferences(context)
+                .edit()
+                .putString(PREF_LAST_RESULT_ID, lastResultId)
+                .apply();
+    }
 
 }
